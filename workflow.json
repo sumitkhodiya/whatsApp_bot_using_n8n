@@ -1,0 +1,159 @@
+{
+  "name": "AI Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -16
+      ],
+      "webhookId": "example-webhook-id",
+      "id": "d3d15c85-d620-4fde-8106-b55aef763691"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\n// Extract the message body and sender information from the incoming payload\nconst messageText = body.body || '';\nconst sender = body.from || '';\n\nreturn [{ message: messageText, from: sender }];"
+      },
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "e99b6f2e-4494-4ddb-93c8-1cdc813b352f"
+    },
+    {
+      "parameters": {
+        "functionCode": "const aiReply = $json.choices[0].message.content;\n\nreturn [\n  {\n    reply: aiReply\n  }\n];"
+      },
+      "name": "Return AI Reply",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -16
+      ],
+      "id": "a43d193a-c1e5-4959-be23-4c426abbc057"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\n  \"reply\": \"={{ $json.reply }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        -16
+      ],
+      "id": "798a3e8c-7490-4e3b-8d7f-1d97ae90d14a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful AI companion.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.message.body }}\"\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        128
+      ],
+      "id": "b1e39ef8-9e9d-4249-82b3-783f33c3a0f6",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Return AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "aa5fca9b-74bb-47d8-a06b-b455c54abf66",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "addf43898e5d3f27ffffba6f63bed18c97e2d69c51c3641879bf7e8eb0f3a5fd"
+  },
+  "nodeGroups": [],
+  "id": "Wqcuncf4ONNN3tfQ",
+  "tags": []
+}
